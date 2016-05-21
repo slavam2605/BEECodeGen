@@ -1,0 +1,40 @@
+How to make PL-CryptoMinisat with the disabled modules (original version):
+--------------------------------------------------------------------------
+
+Step 1: Configure
+-----------------
+Linux:
+  execute "./configure"
+
+Windows:
+  nothing
+
+
+Step 2: Restore settings
+------------------------
+Linux / Windows:
+
+1. edit the file: "cryptominisat-2.5.1/config.h"
+   and replace line 79 "/* #undef STATS_NEEDED */" with "#define STATS_NEEDED 1"
+(LINUX: make sure it is done after ./configure as configure rewrite config.h)
+
+2. edit the file: "cryptominisat-2.5.1/solver/constants.h"
+   and remove the '//' from the begining of line 37 "#define USE_GAUSS"
+
+
+Step 3: Edit make file
+-----------------------
+Linux:
+  nothing
+
+Windows:
+  edit make.cmd as described in make.cmd.
+
+
+Step 4: Compile
+---------------
+Linux:
+  execute "make clean compileFull" command.
+
+Windows:
+  execute "make"

@@ -1,24 +1,22 @@
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.BufferedWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Моклев Вячеслав
- */
 public class Main {
     public static final int[] f4 = {0, 0, 1, 2, 3, 5, 6, 8, 10, 12, 15, 16, 18, 21, 23, 26, 28, 31,
             34, 38, 41, 44, 47, 50, 54, 57, 61, 65, 68, 72, 76, 80, 85};
 
     public static void main(String[] args) throws IOException {
-        PrintWriter pw = new PrintWriter(new FileWriter("C:\\Users\\slava\\Downloads\\bee20160401\\models\\f4.bee"), true);
+        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("../bee20160401/models/f4.bee")));
 
         // n = 20 -- 26 s : SAT
         // n = 21 -- 459 s : SAT
         // n = 16 -- ? s : UNSAT
 
-        int n = 21          ;
+        int n = 20;
         int m = f4[n];
 
         for (int i = 0; i < n; i++) {

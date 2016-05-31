@@ -2,6 +2,7 @@
 % Last Updated: 26/12/2013
 
 :- module(bSolver, [bSolver/0]).
+:- nb_setval(bee_useXorClauses, true).
 :- ['../beeCompiler/bCompiler'].
 :- ['bReader'].
 :- ['satSolverInterface'].

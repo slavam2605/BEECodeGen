@@ -97,14 +97,32 @@ public class ResultParser {
             times[fpt.getKey().n] = fpt.getValue();
         }
         map.forEach((s, times) -> {
-            System.out.println("====== " + s + " ======");
+            System.out.println("====== " + (s.isEmpty() ? "(no flags)" : s) + " ======");
             System.out.println("n\t\treal\t\t(user+sys)/2");
             for (int i = 0; i < MAX_N; i++) {
                 if (times[i] != null) {
-                    System.out.println(i + "\t\t" + times[i].realTime + "\t\t" + (times[i].userTime + times[i].sysTime) / 2);
+                    System.out.println(i + "\t\t" + times[i].realTime + "\t\t" + (times[i].userTime + times[i].sysTime) / 2 / 32);
                 }
             }
         });
+        System.out.println("====================== Symm break comparison ======================");
+        for (String id = ""; id.length() < 6; id += "--n3 ") {
+            System.out.println("========================== " + (id.isEmpty() ? "(no flags)" : id) + " ==========================");
+            System.out.println(" \t\t\t\treal\t\t\t\t\t\t(user+sys/2)");
+            System.out.println("n\t\tsymmbreak\tlex-symmbreak\tsymmbreak\tlex-symmbreak");
+            TimeElapsed[] times1 = map.get(id + "--symmbreak");
+            TimeElapsed[] times2 = map.get(id + "--lex-symmbreak");
+            if (times1 == null || times2 == null)
+                continue;
+            for (int i = 0; i < MAX_N; i++) {
+                if (times1[i] != null && times2[i] != null) {
+                    System.out.print(i + "\t\t");
+                    System.out.print(times1[i].realTime + "\t\t" + times2[i].realTime + "\t\t\t");
+                    System.out.print((times1[i].userTime + times1[i].sysTime) / 2 / 32 + "\t\t\t" + (times2[i].userTime + times2[i].sysTime) / 2 / 32);
+                    System.out.println();
+                }
+            }
+        }
     }
 
     public static void main(String[] args) throws IOException {

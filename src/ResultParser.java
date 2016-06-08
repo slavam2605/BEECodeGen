@@ -7,17 +7,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * @author Моклев Вячеслав
- */
 public class ResultParser {
 
-    public static final int MAX_N = 30;
+    public static final int MAX_N = 40;
 
     private static class TimeElapsed {
-        int realTime = 0;
-        int userTime = 0;
-        int sysTime = 0;
+        int realTime = -100;
+        int userTime = -100;
+        int sysTime = -100;
 
         @Override
         public String toString() {
@@ -54,13 +51,13 @@ public class ResultParser {
                 Matcher userMatcher = user.matcher(s);
                 Matcher sysMatcher = sys.matcher(s);
                 if (realMatcher.find()) {
-                    time.realTime += Integer.parseInt(realMatcher.group(1)) * 60
+                    time.realTime = Integer.parseInt(realMatcher.group(1)) * 60
                             + Integer.parseInt(realMatcher.group(2));
                 } else if (userMatcher.find()) {
-                    time.userTime += Integer.parseInt(userMatcher.group(1)) * 60
+                    time.userTime = Integer.parseInt(userMatcher.group(1)) * 60
                             + Integer.parseInt(userMatcher.group(2));
                 } else if (sysMatcher.find()) {
-                    time.sysTime += Integer.parseInt(sysMatcher.group(1)) * 60
+                    time.sysTime = Integer.parseInt(sysMatcher.group(1)) * 60
                             + Integer.parseInt(sysMatcher.group(2));
                 }
             });
@@ -72,7 +69,7 @@ public class ResultParser {
 
     private static List<Pair<File, FileParams>> getFiles() throws IOException {
         Pattern errPattern = Pattern.compile("err_([0-9]+)([0-9a-z\\- ]*)");
-        return Files.list(new File("").toPath())
+        return Files.list(new File("/nfs/home/smoklev/tests/").toPath())
                 .filter(path -> errPattern.matcher(path.getFileName().toString()).find())
                 .map(path -> {
                     String fileName = path.getFileName().toString();
@@ -97,14 +94,41 @@ public class ResultParser {
             times[fpt.getKey().n] = fpt.getValue();
         }
         map.forEach((s, times) -> {
-            System.out.println("====== " + s + " ======");
-            System.out.println("n\t\treal\t\t(user+sys)/2");
+            System.out.println("====== " + (s.isEmpty() ? "(no flags)" : s) + " ======");
+            System.out.println("n\t\treal\t\t(user+sys)");
             for (int i = 0; i < MAX_N; i++) {
                 if (times[i] != null) {
-                    System.out.println(i + "\t\t" + times[i].realTime + "\t\t" + (times[i].userTime + times[i].sysTime) / 2);
+                    System.out.println(i + "\t\t" + TL(times[i].realTime) + "\t\t" + TL((times[i].userTime + times[i].sysTime) / 32));
                 }
             }
         });
+        System.out.println("====================== Symm break comparison ======================");
+        for (String id = ""; id.length() < 6; id += "--n3") {
+            System.out.println("========================== " + (id.isEmpty() ? "(no flags)" : id) + " ==========================");
+            System.out.println(" \t\t\t\treal\t\t\t\t\t\t(user+sys)");
+            System.out.println("n\t\tbaseline\tsymmbreak\tlex-symmbreak\tbaseline\tsymmbreak\tlex-symmbreak");
+            TimeElapsed[] times0 = map.get(id);
+            TimeElapsed[] times1 = map.get(String.join(" ", Arrays.asList(id, "--symmbreak", "--start-max-deg")).trim());
+            TimeElapsed[] times2 = map.get(String.join(" ", Arrays.asList(id, "--lex-symmbreak")).trim());
+            if (times1 == null || times2 == null || times0 == null)
+                continue;
+            for (int i = 0; i < MAX_N; i++) {
+                if (times1[i] != null && times2[i] != null) {
+                    System.out.print(i + "\t\t");
+                    System.out.print(TL(times0[i].realTime) + "\t\t" + TL(times1[i].realTime) + "\t\t" + TL(times2[i].realTime) + "\t\t");
+                    System.out.print(TL((times0[i].userTime + times0[i].sysTime) / 32) + "\t\t" 
+                                    + TL((times1[i].userTime + times1[i].sysTime) / 32) + "\t\t" + TL((times2[i].userTime + times2[i].sysTime) / 32));
+                    System.out.println();
+                }
+            }
+        }
+    }
+
+    private static String TL(int x) {
+        if (x < 0)
+            return "3600+";
+        else
+            return "" + x;
     }
 
     public static void main(String[] args) throws IOException {

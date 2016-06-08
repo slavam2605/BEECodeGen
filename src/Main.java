@@ -10,6 +10,7 @@ public class Main {
     private boolean SYMM_BREAK = false;
     private boolean LEX_SYMM_BREAK = false;
     private boolean PRE_DEG = false;
+    private boolean START_MAX_DEG = false;
     private boolean LOAD_A = false;
     private String a_file_name = "5-3-star.txt";
     private int pre_max_deg = 5;
@@ -47,6 +48,9 @@ public class Main {
                     a_file_name = max_deg + "-" + (min_deg - 1) + "-star.txt";
                     pre_max_deg = max_deg;
                     pre_min_deg = min_deg;
+                    break;
+                case "--start-max-deg":
+                    START_MAX_DEG = true;
                     break;
                 default:
                     System.err.println("Unknown option: " + args[i]);
@@ -258,8 +262,10 @@ public class Main {
         // ============= SYMMETRY BREAKING ==============
 
         if (SYMM_BREAK) {
-            // degree[0] == max_deg
-//            pw.println("int_eq(" + degree(0) + ", max_deg)");
+            if (START_MAX_DEG) {
+                // degree[0] == max_deg
+                pw.println("int_eq(" + degree(0) + ", max_deg)");
+            }
 
             // declaration of p[1..n-1]: 1..n
             for (int i = 1; i < n; i++) {

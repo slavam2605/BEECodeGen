@@ -6,17 +6,12 @@ import java.util.List;
 /**
  * @author Моклев Вячеслав
  */
-public class Main {
-    public static final int[] f4 = {0, 0, 1, 2, 3, 5, 6, 8, 10, 12, 15, 16, 18, 21, 23, 26, 28, 31,
-            34, 38, 41, 44, 47, 50, 54, 57, 61, 65, 68, 72, 76, 80, 85};
+public class SquareFree {
+    public static final int[] f4 = {0, 0, 1, 2, 3, 4, 6, 7, 9, 10, 12, 14, 16, 18, 21, 22, 24, 26, 29, 31, 34};
+    private boolean START_MAX_DEG = false;
     private boolean N4_PRED = true;
     private boolean SYMM_BREAK = false;
     private boolean LEX_SYMM_BREAK = false;
-    private boolean PRE_DEG = false;
-    private boolean LOAD_A = false;
-    private String a_file_name = "5-3-star.txt";
-    private int pre_max_deg = 5;
-    private int pre_min_deg = 4;
     private int n = 10;
     private int m = f4[n];
 
@@ -27,43 +22,46 @@ public class Main {
     // REV_FILE LEX -- 42 UNSAT
 
 
-    public Main(String[] args) {
-        n = Integer.parseInt(args[0]);
-        m = f4[n];
-        for (int i = 1; i < args.length; i++) {
-            switch (args[i]) {
-                case "--n3":
-                    N4_PRED = false;
-                    break;
-                case "--symmbreak":
-                    SYMM_BREAK = true;
-                    break;
-                case "--lex-symmbreak":
-                    LEX_SYMM_BREAK = true;
-                    break;
-                case "--star":
-                    LOAD_A = true;
-                    PRE_DEG = true;
-                    int max_deg = Integer.parseInt(args[i + 1]);
-                    int min_deg = Integer.parseInt(args[i + 2]);
-                    i += 2;
-                    a_file_name = max_deg + "-" + (min_deg - 1) + "-star.txt";
-                    pre_max_deg = max_deg;
-                    pre_min_deg = min_deg;
-                    break;
-                default:
-                    System.err.println("Unknown option: " + args[i]);
-            }
-        }
+    public SquareFree(String[] args) {
+//        n = Integer.parseInt(args[0]);
+//        m = f4[n];
+//        for (int i = 1; i < args.length; i++) {
+//            switch (args[i]) {
+//                case "--n3":
+//                    N4_PRED = false;
+//                    break;
+//                case "--symmbreak":
+//                    SYMM_BREAK = true;
+//                    break;
+//                case "--lex-symmbreak":
+//                    LEX_SYMM_BREAK = true;
+//                    break;
+//                case "--start-max-deg":
+//                    START_MAX_DEG = true;
+//                    break;
+//                default:
+//                    System.err.println("Unknown option: " + args[i]);
+//            }
+//        }
+
+        //  n: 4, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 16
+        //  f: 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27,
+        // uf:                             23, 26, 28, 32, 35
+        n = 14;
+        m = 28;
+        SYMM_BREAK = true;
+        START_MAX_DEG = true;
+
+        System.out.println(n + ", " + m + ", " + n / 4.0 * (1.0 + Math.sqrt(4.0 * n  - 3.0)));
     }
 
     public static void main(String[] args) throws IOException {
         try {
             if (args.length == 0)
                 args = new String[] {"10"};
-            new Main(args).start();
+            new SquareFree(args).start();
         } catch (Exception e) {
-            System.err.println("Usage: java Main n [--n3|--symmbreak|--lex-symmbreak|--star max min]");
+            System.err.println("Usage: java SquareFree n [--n3|--symmbreak|--lex-symmbreak|--star max min]");
             e.printStackTrace();
         }
     }
@@ -73,10 +71,6 @@ public class Main {
 
         if (SYMM_BREAK && LEX_SYMM_BREAK) {
             throw new RuntimeException("Both symm breaks, may be unsat");
-        }
-
-        if (LOAD_A && !PRE_DEG) {
-            System.err.println("LOAD_A without PRE_DEG looks suspicious");
         }
 
         // n = 20 -- 26 s : SAT
@@ -101,35 +95,8 @@ public class Main {
             pw.println("bool_eq(" + A(i, i) + ", false)");
         }
 
-        if (LOAD_A) {
-            BufferedReader bf = new BufferedReader(new FileReader(a_file_name));
-            for (int i = 0; i < n; i++) {
-                String s = bf.readLine();
-                for (int j = 0; j < n; j++) {
-                    switch (s.charAt(j)) {
-                        case '0':
-                            pw.println("bool_eq(" + A(i, j) + ", false)");
-                            break;
-                        case '1':
-                            pw.println("bool_eq(" + A(i, j) + ", true)");
-                            break;
-                    }
-                }
-            }
-        }
-
         if (N4_PRED) {
-            // no 3- and 4-cycles, O(n^4) predicates
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    for (int k = 0; k < n; k++) {
-                        if (i != j && j != k && i != k) {
-                            pw.println("bool_array_sum_lt([" + A(i, j) + ", " + A(j, k) + ", " + A(k, i) + "], 3)");
-                        }
-                    }
-                }
-            }
-
+            // no 4-cycles, O(n^4) predicates
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
                     for (int k = 0; k < n; k++) {
@@ -142,7 +109,7 @@ public class Main {
                 }
             }
         } else {
-            // no 3- and 4-cycles, O(n^3) predicates
+            // no 4-cycles, O(n^3) predicates
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
                     for (int k = 0; k < n; k++) {
@@ -172,15 +139,6 @@ public class Main {
             for (int i = 0; i < n; i++) {
                 for (int k = 0; k < n; k++) {
                     if (i < k) {
-                    /*pw.println("bool_and_reif(" + A(i, k) + ", " + x(i, k) + ", false)");*/
-                        pw.println("bool_array_sum_lt([" + A(i, k) + ", " + x(i, k) + "], 2)");
-                    }
-                }
-            }
-
-            for (int i = 0; i < n; i++) {
-                for (int k = 0; k < n; k++) {
-                    if (i < k) {
                         List<String> list = new ArrayList<>();
                         for (int j = 0; j < n; j++) {
                             if (j != i && j != k) {
@@ -193,25 +151,26 @@ public class Main {
             }
         }
 
+        pw.print("bool_array_sum_eq([");
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                pw.print(A(i, j));
+                if (i != n - 1 || j != n - 1)
+                    pw.print(", ");
+            }
+        }
+        pw.println("], " + 2 * m + ")");
+
         // declaration of degree[]
         for (int i = 0; i < n; i++) {
             pw.println("new_int(" + degree(i) + ", 1, " + n + ")");
         }
 
         // declaration of min_deg, max_deg
-        if (PRE_DEG) {
-            pw.println("new_int(min_deg, " + pre_min_deg + ", " + pre_min_deg + ")");
-            pw.println("new_int(max_deg, " + pre_max_deg + ", " + pre_max_deg + ")");
-        } else {
-            pw.println("new_int(min_deg, 1, " + n + ")");
-            pw.println("new_int(max_deg, 1, " + n + ")");
-            pw.println("new_int(min_deg_times_max_deg, 1, " + n * n + ")");
-            pw.println("int_times(min_deg, max_deg, min_deg_times_max_deg)");
-            pw.println("int_leq(min_deg_times_max_deg, " + (n - 1) + ")");  // min_deg * max_deg <= n - 1
-            pw.println("int_leq(min_deg, max_deg)");                        // min_deg <= max_deg
-            pw.println("int_geq(min_deg, " + (m - f4[n - 1]) + ")");        // min_deg >= m - f4[n - 1];
-            pw.println("int_geq(max_deg, " + ceilDiv(2 * m, n) + ")");      // max_deg >= 2 * m / n;
-        }
+        pw.println("new_int(min_deg, 1, " + n + ")");
+        pw.println("new_int(max_deg, 1, " + n + ")");
+        pw.println("int_leq(min_deg, max_deg)");                        // min_deg <= max_deg
+        pw.println("int_geq(max_deg, " + ceilDiv(2 * m, n) + ")");      // max_deg >= 2 * m / n;
 
         for (int i = 0; i < n; i++) {
             // degree[i] = sum(A[i])
@@ -248,21 +207,12 @@ public class Main {
         }
         pw.println("], max_deg)");
 
-        pw.print("bool_array_sum_eq([");
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                pw.print(A(i, j));
-                if (i != n - 1 || j != n - 1)
-                    pw.print(", ");
-            }
-        }
-        pw.println("], " + 2 * m + ")");
-
         // ============= SYMMETRY BREAKING ==============
-
         if (SYMM_BREAK) {
-            // degree[0] == max_deg
-//            pw.println("int_eq(" + degree(0) + ", max_deg)");
+            if (START_MAX_DEG) {
+                // degree[0] == max_deg
+                pw.println("int_eq(" + degree(0) + ", max_deg)");
+            }
 
             // declaration of p[1..n-1]: 1..n
             for (int i = 1; i < n; i++) {
@@ -327,28 +277,7 @@ public class Main {
         }
 
         if (LEX_SYMM_BREAK) {
-            if (LOAD_A) {
-                if (n == 24) {
-                    lexSymmBreak(pw, 6, 8);
-                    lexSymmBreak(pw, 9, 11);
-                    lexSymmBreak(pw, 12, 14);
-                    lexSymmBreak(pw, 15, 17);
-                    lexSymmBreak(pw, 18, 20);
-
-                    lexSymmBreak(pw, 21, 23);
-                } else if (n == 19) {
-                    lexSymmBreak(pw, 5, 7);
-                    lexSymmBreak(pw, 8, 10);
-                    lexSymmBreak(pw, 11, 13);
-                    lexSymmBreak(pw, 14, 16);
-
-                    lexSymmBreak(pw, 17, 18);
-                } else {
-                    throw new RuntimeException("Unable to make partial lex-symmbreak with star and n = " + n);
-                }
-            } else {
-                lexSymmBreak(pw, 0, n - 1);
-            }
+            lexSymmBreak(pw, 0, n - 1);
         }
 
         pw.println("solve satisfy");

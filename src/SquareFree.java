@@ -6,8 +6,10 @@ import java.util.List;
 /**
  * @author Моклев Вячеслав
  */
-public class SquareFree {
-    public static final int[] f4 = {0, 0, 1, 2, 3, 4, 6, 7, 9, 10, 12, 14, 16, 18, 21, 22, 24, 26, 29, 31, 34};
+public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  13  14  15  16  17  18  19
+    public static final int[] f4 = {0, 0, 1, 3, 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27, 30, 33};
+                                         //  n: 4, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                                         //  f: 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27, 30, 33,(36)(39)(43)(46)
     private boolean START_MAX_DEG = false;
     private boolean N4_PRED = true;
     private boolean SYMM_BREAK = false;
@@ -44,10 +46,10 @@ public class SquareFree {
 //            }
 //        }
 
-        //  n: 4, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 16
-        //  f: 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27,
-        // uf:                             23, 26, 28, 32, 35
-        n = 14;
+        //  n: 4, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+        //  f: 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27, 30, 33,(36)(39)(43)(46)
+        // uf:                             23, 26, 28, 32, 35, 38, 41, 45, 48
+        n = 20;
         m = 28;
         SYMM_BREAK = true;
         START_MAX_DEG = true;

@@ -68,7 +68,7 @@ public class ResultParser {
     }
 
     private static List<Pair<File, FileParams>> getFiles() throws IOException {
-        Pattern errPattern = Pattern.compile("err_([0-9]+)([0-9a-z\\- ]*)");
+        Pattern errPattern = Pattern.compile("errSq_([0-9]+)([0-9a-z\\- ]*)");
         return Files.list(new File("/nfs/home/smoklev/tests/").toPath())
                 .filter(path -> errPattern.matcher(path.getFileName().toString()).find())
                 .map(path -> {

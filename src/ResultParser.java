@@ -68,7 +68,7 @@ public class ResultParser {
     }
 
     private static List<Pair<File, FileParams>> getFiles() throws IOException {
-        Pattern errPattern = Pattern.compile("errSq_([0-9]+)([0-9a-z\\- ]*)");
+        Pattern errPattern = Pattern.compile("err_([0-9]+)([0-9a-z\\- ]*)");
         return Files.list(new File("/nfs/home/smoklev/tests/").toPath())
                 .filter(path -> errPattern.matcher(path.getFileName().toString()).find())
                 .map(path -> {
@@ -106,19 +106,22 @@ public class ResultParser {
         for (String id = ""; id.length() < 6; id += "--n3") {
             System.out.println("========================== " + (id.isEmpty() ? "(no flags)" : id) + " ==========================");
             System.out.println(" \t\t\t\treal\t\t\t\t\t\t(user+sys)");
-            System.out.println("n\t\tbaseline\tsymmbreak\tlex-symmbreak\tbaseline\tsymmbreak\tlex-symmbreak");
+            System.out.println("n\t\tbaseline\tsymmbreak+\tsymmbreak*\tlex-symmbreak\tbaseline\tsymmbreak+\tsymmbreak*\tlex-symmbreak");
             TimeElapsed[] times0 = map.get(id);
+            TimeElapsed[] times05 = map.get(String.join(" ", Arrays.asList(id, "--symmbreak")).trim());
             TimeElapsed[] times1 = map.get(String.join(" ", Arrays.asList(id, "--symmbreak", "--start-max-deg")).trim());
             TimeElapsed[] times2 = map.get(String.join(" ", Arrays.asList(id, "--lex-symmbreak")).trim());
-            if (times1 == null || times2 == null || times0 == null)
+            if (times1 == null || times2 == null || times0 == null || times05 == null)
                 continue;
             for (int i = 0; i < MAX_N; i++) {
                 if (times1[i] != null && times2[i] != null) {
-                    System.out.print(i + "\t\t");
-                    System.out.print(TL(times0[i].realTime) + "\t\t" + TL(times1[i].realTime) + "\t\t" + TL(times2[i].realTime) + "\t\t");
-                    System.out.print(TL((times0[i].userTime + times0[i].sysTime) / 32) + "\t\t" 
-                                    + TL((times1[i].userTime + times1[i].sysTime) / 32) + "\t\t" + TL((times2[i].userTime + times2[i].sysTime) / 32));
-                    System.out.println();
+                    System.out.print(i + " & ");
+                    if (i <= 19)
+                    System.out.print(TL(times0[i].realTime) + " & " + TL(times05[i].realTime) + " & " + TL(times1[i].realTime) + " & " + TL(times2[i].realTime));
+                    if (i > 19)
+                    System.out.print(TL((times0[i].userTime + times0[i].sysTime)/ 32) + " & " + TL((times05[i].userTime + times05[i].sysTime) / 32) + " & "
+                                    + TL((times1[i].userTime + times1[i].sysTime) / 32) + " & " + TL((times2[i].userTime + times2[i].sysTime) / 32));
+                    System.out.println(" \\\\");
                 }
             }
         }

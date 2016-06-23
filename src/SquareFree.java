@@ -3,9 +3,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class SquareFree {
-    public static final int[] f4 = {0, 0, 1, 3, 5, 6, 7, 9, 11, 13, 16, 18, 21,
-                                    24, 27, 30, 33};
+public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27  28  29  30  31
+    public static final int[] f4 = {0, 0, 1, 3, 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27, 30, 33, 36, 39, 42, 46, 50, 52, 56, 59, 63, 67, 71, 76, 80, 85, 90};
+                                         //  n: 5, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                                         //  f: 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27, 30, 33,(36)(39)(43)(46)
     private boolean START_MAX_DEG = false;
     private boolean N4_PRED = true;
     private boolean SYMM_BREAK = false;
@@ -53,9 +54,13 @@ public class SquareFree {
             }
         }
 
-        //  n: 4, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 16
-        //  f: 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27, 30, 33
-        // uf:                             23, 26, 28, 32, 35
+        //  n: 4, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+        //  f: 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27, 30, 33,(36)(39)(43)(46)
+        // uf:                             23, 26, 28, 32, 35, 38, 41, 45, 48
+        //n = 20;
+        //m = 28;
+        //SYMM_BREAK = true;
+        //START_MAX_DEG = true;
 
         //n = Integer.parseInt(args[0]);
         //m = Integer.parseInt(args[1]);
@@ -179,6 +184,16 @@ public class SquareFree {
         pw.println("new_int(max_deg, 1, " + n + ")");
         pw.println("int_leq(min_deg, max_deg)");                        // min_deg <= max_deg
         pw.println("int_geq(max_deg, " + ceilDiv(2 * m, n) + ")");      // max_deg >= 2 * m / n;
+
+        // experimental constraints
+            pw.println("new_int(min_deg_times_max_deg, 1, " + n * n + ")");
+            pw.println("new_int(min_deg_m_1, 0, " + (n - 1) + ")");
+            pw.println("int_plus(min_deg, -1, min_deg_m_1)");
+            pw.println("int_times(min_deg_m_1, max_deg, min_deg_times_max_deg)");
+            pw.println("int_leq(min_deg_times_max_deg, " + (n - 1) + ")");  // min_deg * max_deg <= n - 1
+            pw.println("int_leq(min_deg, " + (int) Math.floor(0.5 * (1.0 + Math.sqrt(4.0 * n - 3.0))) + ")");
+            //pw.println("int_geq(min_deg, " + (f4[n + 1] - f4[n]) + ")");
+    
 
         for (int i = 0; i < n; i++) {
             // degree[i] = sum(A[i])

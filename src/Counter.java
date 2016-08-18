@@ -39,7 +39,7 @@ public class Counter {
     }
 
     private void start() throws IOException {
-        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("bee20160531/models/f4.bee")));
+        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("../bee20160531/models/f4.bee")));
 
         if (SYMM_BREAK && LEX_SYMM_BREAK) {
             throw new RuntimeException("Both symm breaks, may be unsat");
@@ -63,14 +63,18 @@ public class Counter {
             pw.println("bool_eq(" + A(i, i) + ", false)");
         }
 
+
+        /*
+
         // declaration of degree[]
         for (int i = 0; i < n; i++) {
-            pw.println("new_int(" + degree(i) + ", 1, " + n + ")");
+            pw.println("new_int(" + degree(i) + ", 0, " + n + ")");
         }
 
+
         // declaration of min_deg, max_deg
-        pw.println("new_int(min_deg, 1, " + n + ")");
-        pw.println("new_int(max_deg, 1, " + n + ")");
+        pw.println("new_int(min_deg, 0, " + n + ")");
+        pw.println("new_int(max_deg, 0, " + n + ")");
         pw.println("int_leq(min_deg, max_deg)");                        // min_deg <= max_deg
 
         for (int i = 0; i < n; i++) {
@@ -107,6 +111,8 @@ public class Counter {
                 pw.print(", ");
         }
         pw.println("], max_deg)");
+
+        */
 
         // ============= SYMMETRY BREAKING ==============
 

@@ -52,6 +52,9 @@ public class Main {
                 case "--start-max-deg":
                     START_MAX_DEG = true;
                     break;
+                case "--unsat":
+                    m = f4[n] + 1;
+                    break;
                 default:
                     System.err.println("Unknown option: " + args[i]);
             }
@@ -60,8 +63,6 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         try {
-            if (args.length == 0)
-                args = new String[] {"10"};
             new Main(args).start();
         } catch (Exception e) {
             System.err.println("Usage: java Main n [--n3|--symmbreak|--lex-symmbreak|--star max min]");
@@ -70,7 +71,9 @@ public class Main {
     }
 
     private void start() throws IOException {
-        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("bee20160531/models/f4.bee")));
+        System.out.println("n = " + n + ", m = " + m + ", SYMM_BREAK = " + SYMM_BREAK + ", LEX_SYMM_BREAK = " + LEX_SYMM_BREAK + ", START_MAX_DEG = " + 
+            START_MAX_DEG + ", N4_PRED = " + N4_PRED);
+        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("../bee20160531/models/f4.bee")));
 
         if (SYMM_BREAK && LEX_SYMM_BREAK) {
             throw new RuntimeException("Both symm breaks, may be unsat");

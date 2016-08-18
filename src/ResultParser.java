@@ -12,9 +12,9 @@ public class ResultParser {
     public static final int MAX_N = 40;
 
     private static class TimeElapsed {
-        int realTime = 0;
-        int userTime = 0;
-        int sysTime = 0;
+        int realTime;
+        int userTime;
+        int sysTime;
         int mode = 0; // 0 -- unknown, 1 -- time, 2 -- tl
 
         @Override

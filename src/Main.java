@@ -6,6 +6,7 @@ import java.util.List;
 public class Main {
     public static final int[] f4 = {0, 0, 1, 2, 3, 5, 6, 8, 10, 12, 15, 16, 18, 21, 23, 26, 28, 31,
             34, 38, 41, 44, 47, 50, 54, 57, 61, 65, 68, 72, 76, 80, 85};
+    private static final String PATH_TO_BEE = "C:\\Users\\Home\\Downloads\\bee20160830\\";
     private boolean N4_PRED = true;
     private boolean SYMM_BREAK = false;
     private boolean LEX_SYMM_BREAK = false;
@@ -73,7 +74,7 @@ public class Main {
     private void start() throws IOException {
         System.out.println("n = " + n + ", m = " + m + ", SYMM_BREAK = " + SYMM_BREAK + ", LEX_SYMM_BREAK = " + LEX_SYMM_BREAK + ", START_MAX_DEG = " + 
             START_MAX_DEG + ", N4_PRED = " + N4_PRED);
-        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("../bee20160531/models/f4.bee")));
+        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(PATH_TO_BEE + "models" + File.separatorChar + "f4.bee")));
 
         if (SYMM_BREAK && LEX_SYMM_BREAK) {
             throw new RuntimeException("Both symm breaks, may be unsat");

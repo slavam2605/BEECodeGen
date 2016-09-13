@@ -7,15 +7,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class ResultParser {
+public class ResultParserGl {
 
     public static final int MAX_N = 40;
 
     private static class TimeElapsed {
-        int realTime;
-        int userTime;
-        int sysTime;
-        int mode = 0; // 0 -- unknown, 1 -- time, 2 -- tl
+        int realTime = -100;
+        int userTime = -100;
+        int sysTime = -100;
 
         @Override
         public String toString() {
@@ -45,34 +44,21 @@ public class ResultParser {
             Pattern real = Pattern.compile("real[ \t]*([0-9]+)m([0-9]+)\\.[0-9]+s");
             Pattern user = Pattern.compile("user[ \t]*([0-9]+)m([0-9]+)\\.[0-9]+s");
             Pattern sys = Pattern.compile("sys[ \t]*([0-9]+)m([0-9]+)\\.[0-9]+s");
-            Pattern tl = Pattern.compile("TL: ([0-9]*)h");
-            Pattern tlMin = Pattern.compile("TL: ([0-9]*)m"); 
             TimeElapsed time = new TimeElapsed();
             BufferedReader br = new BufferedReader(new FileReader(file));
             br.lines().forEach(s -> {
                 Matcher realMatcher = real.matcher(s);
                 Matcher userMatcher = user.matcher(s);
                 Matcher sysMatcher = sys.matcher(s);
-                Matcher tlMatcher = tl.matcher(s);
-                Matcher tlMinMatcher = tlMin.matcher(s);
                 if (realMatcher.find()) {
                     time.realTime = Integer.parseInt(realMatcher.group(1)) * 60
                             + Integer.parseInt(realMatcher.group(2));
-                    time.mode = 1;
                 } else if (userMatcher.find()) {
                     time.userTime = Integer.parseInt(userMatcher.group(1)) * 60
                             + Integer.parseInt(userMatcher.group(2));
-                    time.mode = 1;
                 } else if (sysMatcher.find()) {
                     time.sysTime = Integer.parseInt(sysMatcher.group(1)) * 60
                             + Integer.parseInt(sysMatcher.group(2));
-                    time.mode = 1;
-                } else if (tlMatcher.find()) {
-                    time.realTime = Integer.parseInt(tlMatcher.group(1)) * 3600;
-                    time.mode = 2;
-                } else if (tlMinMatcher.find()) {
-                    time.realTime = Integer.parseInt(tlMinMatcher.group(1)) * 60;
-                    time.mode = 2;
                 }
             });
             return time;
@@ -81,24 +67,10 @@ public class ResultParser {
         }
     }
 
-    private static Set<String> getSpecifiers() throws IOException {
-        Set<String> specifiers = new HashSet<>();
-        Pattern p = Pattern.compile("err(.*)_([0-9]+).*");
-        Files.list(new File("/nfs/home/smoklev/tests/").toPath())
-            .filter(path -> p.matcher(path.getFileName().toString()).find())
-            .forEach(path -> {
-                Matcher m = p.matcher(path.getFileName().toString());
-                m.find();
-                specifiers.add(m.group(1));
-            });
-        return specifiers;
-    }
-
-    private static List<Pair<File, FileParams>> getFiles(String specifier) throws IOException {
-        Pattern errPattern = Pattern.compile("err" + specifier + "_([0-9]+)([0-9a-z\\- ]*)");
+    private static List<Pair<File, FileParams>> getFiles() throws IOException {
+        Pattern errPattern = Pattern.compile("errgl_([0-9]+)([0-9a-z\\- ]*)");
         return Files.list(new File("/nfs/home/smoklev/tests/").toPath())
                 .filter(path -> errPattern.matcher(path.getFileName().toString()).find())
-                .filter(path -> !path.getFileName().toString().endsWith("temp"))
                 .map(path -> {
                     String fileName = path.getFileName().toString();
                     Matcher matcher = errPattern.matcher(fileName);
@@ -113,7 +85,7 @@ public class ResultParser {
     }
 
     private static void nicePrint(List<Pair<FileParams, TimeElapsed>> list) {
-        Map<String, TimeElapsed[]> map = new LinkedHashMap<>();
+        Map<String, TimeElapsed[]> map = new HashMap<>();
         for (Pair<FileParams, TimeElapsed> fpt : list) {
             String id = String.join(" ", fpt.getKey().flags);
             if (!map.containsKey(id))
@@ -126,13 +98,12 @@ public class ResultParser {
             System.out.println("n\t\treal\t\t(user+sys)");
             for (int i = 0; i < MAX_N; i++) {
                 if (times[i] != null) {
-                    System.out.println(i + "\t\t" + TLR(times[i]) + "\t\t" + TLUS(times[i]));
+                    System.out.println(i + "\t\t" + TL(times[i].realTime) + "\t\t" + TL((times[i].userTime + times[i].sysTime) / 32));
                 }
             }
         });
         System.out.println("====================== Symm break comparison ======================");
-        List<String> ids = Arrays.asList("", "--n3", "--unsat", "--unsat --n3");
-        for (String id: ids) {
+        for (String id = ""; id.length() < 6; id += "--n3") {
             System.out.println("========================== " + (id.isEmpty() ? "(no flags)" : id) + " ==========================");
             System.out.println(" \t\t\t\treal\t\t\t\t\t\t(user+sys)");
             System.out.println("n\t\tbaseline\tsymmbreak+\tsymmbreak*\tlex-symmbreak\tbaseline\tsymmbreak+\tsymmbreak*\tlex-symmbreak");
@@ -140,55 +111,31 @@ public class ResultParser {
             //TimeElapsed[] times05 = map.get(String.join(" ", Arrays.asList(id, "--symmbreak")).trim());
             TimeElapsed[] times1 = map.get(String.join(" ", Arrays.asList(id, "--symmbreak", "--start-max-deg")).trim());
             TimeElapsed[] times2 = map.get(String.join(" ", Arrays.asList(id, "--lex-symmbreak")).trim());
-            if (times1 == null || times2 == null || times0 == null)
+            if (times1 == null || times2 == null || times0 == null/* || times05 == null*/)
                 continue;
             for (int i = 0; i < MAX_N; i++) {
-                if (times0[i] != null || times1[i] != null || times2[i] != null) {
+                if (times1[i] != null && times2[i] != null) {
                     System.out.print(i + " & ");
                     //if (i <= 19)
-                    System.out.print(TLR(times0[i]) + " & " + TLR(times1[i]) + " & " + TLR(times2[i]));
+                    //System.out.print(TL(times0[i].realTime) + " & " + /*TL(times05[i].realTime) + " & " +*/ TL(times1[i].realTime) + " & " + TL(times2[i].realTime) + "\t\t");
                     //if (i > 19)
-                    //System.out.print(TL((times0[i].userTime + times0[i].sysTime)/ 32) + " & " + TL((times05[i].userTime + times05[i].sysTime) / 32) + " & "
-                    //                + TL((times1[i].userTime + times1[i].sysTime) / 32) + " & " + TL((times2[i].userTime + times2[i].sysTime) / 32));
+                    System.out.print(TL((times0[i].userTime + times0[i].sysTime)/ 32) + " & " + /*TL((times05[i].userTime + times05[i].sysTime) / 32) + " & "
+                                    + */TL((times1[i].userTime + times1[i].sysTime) / 32) + " & " + TL((times2[i].userTime + times2[i].sysTime) / 32));
                     System.out.println(" \\\\");
                 }
             }
         }
     }
 
-    private static String TLR(TimeElapsed time) {
-        if (time == null)
-            return "NULL";
-        switch (time.mode) {
-            case 0: 
-                return "UNK";
-            case 1: 
-                return "" + time.realTime;
-            case 2: 
-                return time.realTime + "+";
-            default: throw new RuntimeException("Unknown mode: 2");
-        }
-    }
-
-    private static String TLUS(TimeElapsed time) {
-        switch (time.mode) {
-            case 0: 
-                return "UNK";
-            case 1: 
-                return "" + (time.userTime + time.sysTime) / 32;
-            case 2: 
-                return time.realTime + "+";
-            default: throw new RuntimeException("Unknown mode: 2");
-        }
+    private static String TL(int x) {
+        if (x < 0)
+            return "3600+";
+        else
+            return "" + x;
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 1) {
-            System.out.println("Usage: java ResultParser [specifier]");
-            System.out.println("Available specifiers: " + getSpecifiers());
-            return;
-        }
-        List<Pair<FileParams, TimeElapsed>> list = getFiles(args[0]).stream()
+        List<Pair<FileParams, TimeElapsed>> list = getFiles().stream()
                 .map(ffp -> new Pair<>(ffp.getValue(), readFile(ffp.getKey())))
                 .collect(Collectors.toList());
         nicePrint(list);

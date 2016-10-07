@@ -73,7 +73,7 @@ public class Main {
     private void start() throws IOException {
         System.out.println("n = " + n + ", m = " + m + ", SYMM_BREAK = " + SYMM_BREAK + ", LEX_SYMM_BREAK = " + LEX_SYMM_BREAK + ", START_MAX_DEG = " + 
             START_MAX_DEG + ", N4_PRED = " + N4_PRED);
-        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("../bee20160531/models/f4.bee")));
+        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("../bee20160830/models/f4.bee")));
 
         if (SYMM_BREAK && LEX_SYMM_BREAK) {
             throw new RuntimeException("Both symm breaks, may be unsat");

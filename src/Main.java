@@ -13,6 +13,7 @@ public class Main {
     private boolean LEX_SYMM_BREAK = false;
     private boolean PRE_DEG = false;
     private boolean START_MAX_DEG = false;
+    private boolean SORTED_WEIGHTS = false;
     private boolean LOAD_A = false;
     private boolean UNAVOIDABLE_SYMMBREAK = false;
     private String a_file_name = "5-3-star.txt";
@@ -61,6 +62,9 @@ public class Main {
                 case "--unsat":
                     m = f4[n] + 1;
                     break;
+                case "--sorted-weights":
+                    SORTED_WEIGHTS = true;
+                    break;
                 default:
                     System.err.println("Unknown option: " + args[i]);
             }
@@ -71,13 +75,14 @@ public class Main {
         try {
             new Main(args).start();
         } catch (Exception e) {
-            System.err.println("Usage: java Main n [--n3|--symmbreak|--lex-symmbreak|--star max min]");
+            System.err.println("Usage: java Main n [--n3|--symmbreak|--lex-symmbreak|" +
+                    "--star max min|--start-max-deg|--sorted-weights|--unavoid-symmbreak|--unsat]");
             e.printStackTrace();
         }
     }
 
     private void start() throws IOException {
-        System.out.println("n = " + n + ", m = " + m + ", SYMM_BREAK = " + SYMM_BREAK + ", LEX_SYMM_BREAK = " + LEX_SYMM_BREAK + ", START_MAX_DEG = " + 
+        System.out.println("n = " + n + ", m = " + m + ", SYMM_BREAK = " + SYMM_BREAK + ", LEX_SYMM_BREAK = " + LEX_SYMM_BREAK + ", START_MAX_DEG = " +
             START_MAX_DEG + ", N4_PRED = " + N4_PRED);
         PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(PATH_TO_BEE + "models" + File.separatorChar + "f4.bee")));
 
@@ -230,11 +235,53 @@ public class Main {
     }
 
     private void addBFSSymmBreak(PrintWriter pw) {
+        addBFSConstraint(pw);
         if (START_MAX_DEG) {
-            // degree[0] == max_deg
-            pw.println("int_eq(" + var("degree", 0) + ", max_deg)");
+            addStartMaxDegConstraint(pw);
+        }
+        if (SORTED_WEIGHTS) {
+            addSortedWeightsConstraint(pw);
+        }
+    }
+
+    private void addStartMaxDegConstraint(PrintWriter pw) {
+        // degree[0] == max_deg
+        pw.println("int_eq(" + var("degree", 0) + ", max_deg)");
+    }
+
+    private void addSortedWeightsConstraint(PrintWriter pw) {
+        // declaration of w[0..n-1]: 1..n
+        for (int i = 0; i < n; i++) {
+            pw.println("new_int(" + var("w", i) + ", 1, " + (n - i) + ")");
         }
 
+        // (p[i] == p[i + 1]) => (w[i] >= w[i + 1])
+        for (int i = 1; i < n - 1; i++) {
+            String X1 = nextBool(pw);
+            String X2 = nextBool(pw);
+            pw.println("int_eq_reif(" + var("p", i) + ", " + var("p", i + 1) + ", " + X1 + ")");
+            pw.println("int_geq_reif(" + var("w", i) + ", " + var("w", i + 1) + ", " + X2 + ")");
+            pw.println("bool_ite(" + X1 + ", " + X2 + ", true)");
+        }
+
+        // w[i] = 1 + sum(w[j] * bool2int(p[j] == i), j = i+1..n-1)
+        for (int i = 0; i < n; i++) {
+            List<String> list = new ArrayList<>();
+            for (int j = i + 1; j < n; j++) {
+                String X1 = nextBool(pw);
+                String X2 = nextInt(pw, 0, 1);
+                String X3 = nextInt(pw, 0, n);
+                pw.println("int_eq_reif(" + var("p", j) + ", " + i + ", " + X1 + ")");
+                pw.println("bool2int(" + X1 + ", " + X2 + ")");
+                pw.println("int_times(" + var("w", j) + ", " + X2 + ", " + X3 + ")");
+                list.add(X3);
+            }
+            list.add("1");
+            pw.println("int_array_sum_eq(" + list + ", " + var("w", i) + ")");
+        }
+    }
+
+    private void addBFSConstraint(PrintWriter pw) {
         // declaration of p[1..n-1]: 1..n
         for (int i = 1; i < n; i++) {
             pw.println("new_int(" + var("p", i) + ", 0, " + (i - 1) + ")");
@@ -264,36 +311,6 @@ public class Main {
         // p[i] <= p[i + 1]
         for (int i = 1; i < n - 1; i++) {
             pw.println("int_leq(" + var("p", i) + ", " + var("p", i + 1) + ")");
-        }
-
-        // declaration of w[0..n-1]: 1..n
-        for (int i = 0; i < n; i++) {
-            pw.println("new_int(" + var("w", i) + ", 1, " + (n - i) + ")");
-        }
-
-        // (p[i] == p[i + 1]) => (w[i] >= w[i + 1])
-        for (int i = 1; i < n - 1; i++) {
-            String X1 = nextBool(pw);
-            String X2 = nextBool(pw);
-            pw.println("int_eq_reif(" + var("p", i) + ", " + var("p", i + 1) + ", " + X1 + ")");
-            pw.println("int_geq_reif(" + var("w", i) + ", " + var("w", i + 1) + ", " + X2 + ")");
-            pw.println("bool_ite(" + X1 + ", " + X2 + ", true)");
-        }
-
-        // w[i] = 1 + sum(w[j] * bool2int(p[j] == i), j = i+1..n-1)
-        for (int i = 0; i < n; i++) {
-            List<String> list = new ArrayList<>();
-            for (int j = i + 1; j < n; j++) {
-                String X1 = nextBool(pw);
-                String X2 = nextInt(pw, 0, 1);
-                String X3 = nextInt(pw, 0, n);
-                pw.println("int_eq_reif(" + var("p", j) + ", " + i + ", " + X1 + ")");
-                pw.println("bool2int(" + X1 + ", " + X2 + ")");
-                pw.println("int_times(" + var("w", j) + ", " + X2 + ", " + X3 + ")");
-                list.add(X3);
-            }
-            list.add("1");
-            pw.println("int_array_sum_eq(" + list + ", " + var("w", i) + ")");
         }
     }
 

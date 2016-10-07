@@ -2,15 +2,18 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27  28  29  30  31
     public static final int[] f4 = {0, 0, 1, 3, 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27, 30, 33, 36, 39, 42, 46, 50, 52, 56, 59, 63, 67, 71, 76, 80, 85, 90};
                                          //  n: 5, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
                                          //  f: 5, 6, 7, 9, 11, 13, 16, 18, 21, 24, 27, 30, 33,(36)(39)(43)(46)
-    private boolean START_MAX_DEG = false;
     private boolean N4_PRED = true;
     private boolean SYMM_BREAK = false;
     private boolean LEX_SYMM_BREAK = false;
+    private boolean UNAVOIDABLE_SYMMBREAK = false;
+    private boolean START_MAX_DEG = false;
+    private boolean SORTED_WEIGHTS = false;
     private int n = 10;
     private int m = f4[n];
 
@@ -42,8 +45,14 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
                 case "--start-max-deg":
                     START_MAX_DEG = true;
                     break;
+                case "--sorted-weights":
+                    SORTED_WEIGHTS = true;
+                    break;
+                case "--unavoid-symmbreak":
+                    UNAVOIDABLE_SYMMBREAK = true;
+                    break;
                 case "--unsat":
-                    m++;
+                    m = f4[n] + 1;
                     break;
                 case "--m":
                     m = Integer.parseInt(args[i + 1]);
@@ -231,72 +240,12 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
         pw.println("], max_deg)");
 
         // ============= SYMMETRY BREAKING ==============
+        if (UNAVOIDABLE_SYMMBREAK) {
+            addUnavoidableSymmBreak(pw);
+        }
+
         if (SYMM_BREAK) {
-            if (START_MAX_DEG) {
-                // degree[0] == max_deg
-                pw.println("int_eq(" + degree(0) + ", max_deg)");
-            }
-
-            // declaration of p[1..n-1]: 1..n
-            for (int i = 1; i < n; i++) {
-                pw.println("new_int(" + p(i) + ", 0, " + (i - 1) + ")");
-            }
-
-            // FORALL i, j. p[j] = i <=> (A[i, j] && !(EXISTS k < i. A[k, j]))
-            for (int i = 0; i < n; i++) {
-                for (int j = 1; j < n; j++) {
-                    String X1 = nextBool(pw);
-                    String X2 = nextBool(pw);
-
-                    // p[j] = i <=> X1
-                    pw.println("int_eq_reif(" + p(j) + ", " + i + ", " + X1 + ")");
-
-                    // EXISTS k < i. A[k, j] <=> X2
-                    List<String> list = new ArrayList<>();
-                    for (int k = 0; k < i; k++) {
-                        list.add(A(k, j));
-                    }
-                    pw.println("bool_array_or_reif(" + list + ", " + X2 + ")");
-
-                    // A[i, j] && -X2 <=> X1
-                    pw.println("bool_and_reif(" + A(i, j) + ", -" + X2 + ", " + X1 + ")");
-                }
-            }
-
-            // p[i] <= p[i + 1]
-            for (int i = 1; i < n - 1; i++) {
-                pw.println("int_leq(" + p(i) + ", " + p(i + 1) + ")");
-            }
-
-            // declaration of w[0..n-1]: 1..n
-            for (int i = 0; i < n; i++) {
-                pw.println("new_int(" + w(i) + ", 1, " + (n - i) + ")");
-            }
-
-            // (p[i] == p[i + 1]) => (w[i] >= w[i + 1])
-            for (int i = 1; i < n - 1; i++) {
-                String X1 = nextBool(pw);
-                String X2 = nextBool(pw);
-                pw.println("int_eq_reif(" + p(i) + ", " + p(i + 1) + ", " + X1 + ")");
-                pw.println("int_geq_reif(" + w(i) + ", " + w(i + 1) + ", " + X2 + ")");
-                pw.println("bool_ite(" + X1 + ", " + X2 + ", true)");
-            }
-
-            // w[i] = 1 + sum(w[j] * bool2int(p[j] == i), j = i+1..n-1)
-            for (int i = 0; i < n; i++) {
-                List<String> list = new ArrayList<>();
-                for (int j = i + 1; j < n; j++) {
-                    String X1 = nextBool(pw);
-                    String X2 = nextInt(pw, 0, 1);
-                    String X3 = nextInt(pw, 0, n);
-                    pw.println("int_eq_reif(" + p(j) + ", " + i + ", " + X1 + ")");
-                    pw.println("bool2int(" + X1 + ", " + X2 + ")");
-                    pw.println("int_times(" + w(j) + ", " + X2 + ", " + X3 + ")");
-                    list.add(X3);
-                }
-                list.add("1");
-                pw.println("int_array_sum_eq(" + list + ", " + w(i) + ")");
-            }
+            addBFSSymmBreak(pw);
         }
 
         if (LEX_SYMM_BREAK) {
@@ -305,6 +254,104 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
 
         pw.println("solve satisfy");
         pw.close();
+    }
+
+    private void addBFSSymmBreak(PrintWriter pw) {
+        addBFSConstraint(pw);
+        if (START_MAX_DEG) {
+            addStartMaxDegConstraint(pw);
+        }
+        if (SORTED_WEIGHTS) {
+            addSortedWeightsConstraint(pw);
+        }
+    }
+
+    private void addStartMaxDegConstraint(PrintWriter pw) {
+        // degree[0] == max_deg
+        pw.println("int_eq(" + var("degree", 0) + ", max_deg)");
+    }
+
+    private void addSortedWeightsConstraint(PrintWriter pw) {
+        // declaration of w[0..n-1]: 1..n
+        for (int i = 0; i < n; i++) {
+            pw.println("new_int(" + var("w", i) + ", 1, " + (n - i) + ")");
+        }
+
+        // (p[i] == p[i + 1]) => (w[i] >= w[i + 1])
+        for (int i = 1; i < n - 1; i++) {
+            String X1 = nextBool(pw);
+            String X2 = nextBool(pw);
+            pw.println("int_eq_reif(" + var("p", i) + ", " + var("p", i + 1) + ", " + X1 + ")");
+            pw.println("int_geq_reif(" + var("w", i) + ", " + var("w", i + 1) + ", " + X2 + ")");
+            pw.println("bool_ite(" + X1 + ", " + X2 + ", true)");
+        }
+
+        // w[i] = 1 + sum(w[j] * bool2int(p[j] == i), j = i+1..n-1)
+        for (int i = 0; i < n; i++) {
+            List<String> list = new ArrayList<>();
+            for (int j = i + 1; j < n; j++) {
+                String X1 = nextBool(pw);
+                String X2 = nextInt(pw, 0, 1);
+                String X3 = nextInt(pw, 0, n);
+                pw.println("int_eq_reif(" + var("p", j) + ", " + i + ", " + X1 + ")");
+                pw.println("bool2int(" + X1 + ", " + X2 + ")");
+                pw.println("int_times(" + var("w", j) + ", " + X2 + ", " + X3 + ")");
+                list.add(X3);
+            }
+            list.add("1");
+            pw.println("int_array_sum_eq(" + list + ", " + var("w", i) + ")");
+        }
+    }
+
+    private void addBFSConstraint(PrintWriter pw) {
+        // declaration of p[1..n-1]: 1..n
+        for (int i = 1; i < n; i++) {
+            pw.println("new_int(" + var("p", i) + ", 0, " + (i - 1) + ")");
+        }
+
+        // FORALL i, j. p[j] = i <=> (A[i, j] && !(EXISTS k < i. A[k, j]))
+        for (int i = 0; i < n; i++) {
+            for (int j = 1; j < n; j++) {
+                String X1 = nextBool(pw);
+                String X2 = nextBool(pw);
+
+                // p[j] = i <=> X1
+                pw.println("int_eq_reif(" + var("p", j) + ", " + i + ", " + X1 + ")");
+
+                // EXISTS k < i. A[k, j] <=> X2
+                List<String> list = new ArrayList<>();
+                for (int k = 0; k < i; k++) {
+                    list.add(var("A", k, j));
+                }
+                pw.println("bool_array_or_reif(" + list + ", " + X2 + ")");
+
+                // A[i, j] && -X2 <=> X1
+                pw.println("bool_and_reif(" + var("A", i, j) + ", -" + X2 + ", " + X1 + ")");
+            }
+        }
+
+        // p[i] <= p[i + 1]
+        for (int i = 1; i < n - 1; i++) {
+            pw.println("int_leq(" + var("p", i) + ", " + var("p", i + 1) + ")");
+        }
+    }
+
+    private void addUnavoidableSymmBreak(PrintWriter pw) {
+        pw.println("bool_eq(" + var("A", 0, 3) + ", " + var("A", 0, 4) + ")");
+        pw.println("bool_eq(" + var("A", 0, 4) + ", " + var("A", 0, 5) + ")");
+        pw.println("bool_eq(" + var("A", 0, 5) + ", " + var("A", 1, 3) + ")");
+        pw.println("bool_eq(" + var("A", 1, 3) + ", " + var("A", 1, 4) + ")");
+        pw.println("bool_eq(" + var("A", 1, 4) + ", " + var("A", 1, 5) + ")");
+        pw.println("bool_eq(" + var("A", 1, 5) + ", " + var("A", 1, 6) + ")");
+        pw.println("bool_eq(" + var("A", 1, 6) + ", " + var("A", 2, 4) + ")");
+        pw.println("bool_eq(" + var("A", 2, 4) + ", " + var("A", 2, 5) + ")");
+        pw.println("bool_eq(" + var("A", 2, 5) + ", " + var("A", 2, 6) + ")");
+        pw.println("bool_eq(" + var("A", 2, 6) + ", " + var("A", 2, 7) + ")");
+        pw.println("bool_eq(" + var("A", 2, 7) + ", " + var("A", 2, 8) + ")");
+    }
+
+    private String var(String prefix, int... indices) {
+        return prefix + Arrays.stream(indices).mapToObj(x -> "_" + x).collect(Collectors.joining());
     }
 
     private void lexSymmBreak(PrintWriter pw, int a, int b) {

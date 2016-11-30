@@ -1,5 +1,4 @@
 import javafx.util.Pair;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
@@ -7,7 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class ResultParser {
+public class ResultParserList {
 
     public static final int MAX_N = 40;
 
@@ -122,43 +121,14 @@ public class ResultParser {
             times[fpt.getKey().n] = fpt.getValue();
         }
         map.forEach((s, times) -> {
-            System.out.println("====== " + (s.isEmpty() ? "(no flags)" : s) + " ======");
-            System.out.println("n\t\treal\t\t(user+sys)");
             for (int i = 0; i < MAX_N; i++) {
                 if (times[i] != null) {
-                    System.out.println(i + "\t\t" + TLR(times[i]) + "\t\t" + TLUS(times[i]));
+                    // System.out.println("\t" + i + "\t\t" + TLR(times[i]) + "\t\t" + TLUS(times[i]));
+                   if (i == 28) System.out.println(TLUS(times[i]));
+                    //break; // LOL <------------------------------------------------------------------
                 }
             }
         });
-        System.out.println("====================== Symm break comparison ======================");
-        List<String> ids = Arrays.asList("", "--n3", "--unsat", "--unsat --n3");
-        for (String id: ids) {
-            System.out.println("========================== " + (id.isEmpty() ? "(no flags)" : id) + " ==========================");
-            System.out.println(" \t\t\t\treal\t\t\t\t\t\t(user+sys)");
-            System.out.println("n\t\tbaseline\tsymmbreak+\tsymmbreak*\tlex-symmbreak\tbaseline\tsymmbreak+\tsymmbreak*\tlex-symmbreak");
-            TimeElapsed[] times0 = map.get(id);
-            TimeElapsed[] timesBFS = map.get(id + String.join(" ", Arrays.asList("--symmbreak")).trim()); 
-            TimeElapsed[] timesPLUS = map.get(id + String.join(" ", Arrays.asList("--symmbreak", "--start-max-deg")).trim());
-            TimeElapsed[] timesSTAR = map.get(id + String.join(" ", Arrays.asList("--symmbreak", "--start-max-deg", "--sorted-weights")).trim());
-            TimeElapsed[] timesUNAVOID = map.get(id + String.join(" ", Arrays.asList("--unavoid-symmbreak")).trim());
-            TimeElapsed[] timesLEX = map.get(id + String.join(" ", Arrays.asList("--lex-symmbreak")).trim());
-            System.out.println(times0 + ", " + timesBFS + ", " + timesPLUS + ", " + timesSTAR + ", " + timesUNAVOID + ", " + timesLEX);
-            if (times0 == null || timesBFS == null || timesPLUS == null || timesSTAR == null || timesUNAVOID == null || timesLEX == null)
-                continue;
-            for (int i = 0; i < MAX_N; i++) {
-                if (times0[i] != null || timesBFS[i] != null || timesPLUS[i] != null ||
-                    timesSTAR[i] != null || timesUNAVOID[i] != null || timesLEX[i] != null) {
-                    System.out.print(i + " & ");
-                    System.out.printf("%s & %s & %s & %s & %s & %s",  TLR(times0[i]), 
-                                     TLR(timesBFS[i]),
-                                     TLR(timesPLUS[i]),
-                                     TLR(timesSTAR[i]),
-                                     TLR(timesUNAVOID[i]),
-                                     TLR(timesLEX[i]));
-                    System.out.println(" \\\\");
-                }
-            }
-        }
     }
 
     private static String TLR(TimeElapsed time) {
@@ -194,10 +164,17 @@ public class ResultParser {
             System.out.println("Available specifiers: " + getSpecifiers());
             return;
         }
-        List<Pair<FileParams, TimeElapsed>> list = getFiles(args[0]).stream()
-                .map(ffp -> new Pair<>(ffp.getValue(), readFile(ffp.getKey())))
-                .collect(Collectors.toList());
-        nicePrint(list);
+        System.out.println("n\t\treal\t\t(user+sys)");
+        for (int i = 1; i <= 50; i++) { 
+            //System.out.printf("(%2d) ", i); 
+            List<Pair<FileParams, TimeElapsed>> list = getFiles(args[0] + i).stream()
+                    .map(ffp -> new Pair<>(ffp.getValue(), readFile(ffp.getKey())))
+                    .collect(Collectors.toList());
+            if (list.isEmpty())
+                System.out.println();
+            else
+                nicePrint(list);
+        }
     }
 
 }

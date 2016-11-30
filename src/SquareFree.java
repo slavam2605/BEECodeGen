@@ -14,6 +14,7 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
     private boolean UNAVOIDABLE_SYMMBREAK = false;
     private boolean START_MAX_DEG = false;
     private boolean SORTED_WEIGHTS = false;
+    private static final String PATH_TO_BEE = "/nfs/home/smoklev/BEECodeGen/bee20160830/";
     private int n = 10;
     private int m = f4[n];
 
@@ -25,7 +26,7 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
 
 
     public SquareFree(String[] args) {
-
+        System.out.println(Arrays.toString(args));
         n = Integer.parseInt(args[0]);
         if (n >= 0 && n < f4.length)
             m = f4[n];
@@ -89,7 +90,7 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
     }
 
     private void start() throws IOException {
-        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("bee20160531/models/f4.bee")));
+        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(PATH_TO_BEE + "models/f4.bee")));
 
         if (SYMM_BREAK && LEX_SYMM_BREAK) {
             throw new RuntimeException("Both symm breaks, may be unsat");

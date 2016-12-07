@@ -11,7 +11,7 @@ public class ResultParser {
 
     public static final int MAX_N = 40;
 
-    private static class TimeElapsed {
+    public static class TimeElapsed {
         int realTime;
         int userTime;
         int sysTime;
@@ -161,7 +161,7 @@ public class ResultParser {
         }
     }
 
-    private static String TLR(TimeElapsed time) {
+    static String TLR(TimeElapsed time) {
         if (time == null)
             return "    NULL";
         switch (time.mode) {
@@ -176,7 +176,7 @@ public class ResultParser {
         }
     }
 
-    private static String TLUS(TimeElapsed time) {
+    static String TLUS(TimeElapsed time) {
         switch (time.mode) {
             case 0: 
                 return "UNK";

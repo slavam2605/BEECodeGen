@@ -14,6 +14,7 @@ public class Main {
     private boolean PRE_DEG = false;
     private boolean START_MAX_DEG = false;
     private boolean SORTED_WEIGHTS = false;
+    private boolean SORTED_DEGS = false;
     private boolean LOAD_A = false;
     private boolean UNAVOIDABLE_SYMMBREAK = false;
     private String a_file_name = "5-3-star.txt";
@@ -64,6 +65,9 @@ public class Main {
                     break;
                 case "--sorted-weights":
                     SORTED_WEIGHTS = true;
+                    break;
+                case "--sorted-degs":
+                    SORTED_DEGS = true;
                     break;
                 default:
                     System.err.println("Unknown option: " + args[i]);
@@ -242,6 +246,9 @@ public class Main {
         if (SORTED_WEIGHTS) {
             addSortedWeightsConstraint(pw);
         }
+        if (SORTED_DEGS) {
+            addSortedDegsConstraint(pw);
+        }
     }
 
     private void addStartMaxDegConstraint(PrintWriter pw) {
@@ -249,6 +256,17 @@ public class Main {
         pw.println("int_eq(" + var("degree", 0) + ", max_deg)");
     }
 
+    private void addSortedDegsConstraint(PrintWriter pw) {
+        // (p[i] == p[i + 1]) => (degree[i] >= degree[i + 1])
+        for (int i = 1; i < n - 1; i++) {
+            String X1 = nextBool(pw);
+            String X2 = nextBool(pw);
+            pw.println("int_eq_reif(" + var("p", i) + ", " + var("p", i + 1) + ", " + X1 + ")");
+            pw.println("int_geq_reif(" + var("degree", i) + ", " + var("degree", i + 1) + ", " + X2 + ")");
+            pw.println("bool_array_or([" + X1 + ", -" + X2 + "])");
+        }
+    }
+    
     private void addSortedWeightsConstraint(PrintWriter pw) {
         // declaration of w[0..n-1]: 1..n
         for (int i = 0; i < n; i++) {

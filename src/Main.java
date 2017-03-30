@@ -39,7 +39,7 @@ public class Main {
                 case "--n3":
                     N4_PRED = false;
                     break;
-                case "--symmbreak":
+                case "--symmbreak": 
                     SYMM_BREAK = true;
                     break;
                 case "--lex-symmbreak":

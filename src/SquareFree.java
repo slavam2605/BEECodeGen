@@ -14,6 +14,7 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
     private boolean UNAVOIDABLE_SYMMBREAK = false;
     private boolean START_MAX_DEG = false;
     private boolean SORTED_WEIGHTS = false;
+    private boolean SIMPLE_SORTED_DEGS = false;
     private boolean SORTED_DEGS = false;
     private static final String PATH_TO_BEE = "/nfs/home/smoklev/BEECodeGen/bee20160830/";
     private int n = 10;
@@ -52,6 +53,9 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
                     break;
                 case "--sorted-degs":
                     SORTED_DEGS = true;
+                    break;
+                case "--simple-sorted-degs":
+                    SIMPLE_SORTED_DEGS = true;
                     break;
                 case "--unavoid-symmbreak":
                     UNAVOIDABLE_SYMMBREAK = true;
@@ -261,7 +265,7 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
         pw.close();
     }
 
-    private void addSortedDegsConstraint(PrintWriter pw) {
+    private void addSimpleSortedDegsConstraint(PrintWriter pw) {
         // (p[i] == p[i + 1]) => (degree[i] >= degree[i + 1])
         for (int i = 1; i < n - 1; i++) {
             String X1 = nextBool(pw);
@@ -271,7 +275,20 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
             pw.println("bool_array_or([-" + X1 + ", " + X2 + "])");
         }
     }
-    
+
+    private void addSortedDegsConstraint(PrintWriter pw) {
+        // (p[i] == p[i + 1] && w[i] == w[i + 1]) => (degree[i] >= degree[i + 1])
+        for (int i = 1; i < n - 1; i++) {
+            String X1 = nextBool(pw);
+            String X2 = nextBool(pw);
+            String X3 = nextBool(pw);
+            pw.println("int_eq_reif(" + var("p", i) + ", " + var("p", i + 1) + ", " + X1 + ")");
+            pw.println("int_eq_reif(" + var("w", i) + ", " + var("w", i + 1) + ", " + X2 + ")");
+            pw.println("int_geq_reif(" + var("degree", i) + ", " + var("degree", i + 1) + ", " + X3 + ")");
+            pw.println("bool_array_or([-" + X1 + ", -" + X2 + ", " + X3 + "])");
+        }
+    }
+
     private void addBFSSymmBreak(PrintWriter pw) {
         addBFSConstraint(pw);
         if (START_MAX_DEG) {
@@ -281,7 +298,11 @@ public class SquareFree {        // 0  1  2  3  4  5  6  7   8   9  10  11  12  
             addSortedWeightsConstraint(pw);
         }
         if (SORTED_DEGS) {
+            addSortedWeightsConstraint(pw);
             addSortedDegsConstraint(pw);
+        }
+        if (SIMPLE_SORTED_DEGS) {
+            addSimpleSortedDegsConstraint(pw);
         }
     }
 
